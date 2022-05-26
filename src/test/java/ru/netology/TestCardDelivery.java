@@ -1,9 +1,11 @@
 package ru.netology;
 
 import com.codeborne.selenide.Condition;
+import com.codeborne.selenide.SelenideElement;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.openqa.selenium.Keys;
+import org.openqa.selenium.WebElement;
 
 import java.time.Duration;
 import java.time.LocalDate;
@@ -21,42 +23,46 @@ public class TestCardDelivery {
     void setUpTest() {
         //make random user
         userData = UserDataGenerator.createUserDataEntry();
-        String initialRequestDate = generateDate(4);
-
-        fillAndSubmitOrderForm(userData.getCity(), userData.getFullName(), userData.getPhoneNum(), initialRequestDate);
-        //ожидаем первоначальный ответ для уникальной заявки
-        waitForPopup("success-notification", "Успешно!", "Встреча успешно запланирована на " + initialRequestDate);
     }
 
 
     @Test
     void shouldRescheduleCardDelivery() {
 
-        String rescheduleDate = generateDate(7);
-        fillAndSubmitOrderForm(userData.getCity(), userData.getFullName(), userData.getPhoneNum(), rescheduleDate);
+        open("http://localhost:9999");
+
+        //make initial order
+        fillAndSubmitOrderForm(userData.getCity(), userData.getFullName(), userData.getPhoneNum(), userData.getInitialDate());
+        //ожидаем подтверждение первого заказа на изначальную дату
+        waitForPopup("success-notification", "Успешно!", "Встреча успешно запланирована на " + userData.getInitialDate());
+
+        //второй заказ, с другой датой
+        fillAndSubmitOrderForm(userData.getCity(), userData.getFullName(), userData.getPhoneNum(), userData.getRescheduledDate());
         //ожидаем popup с предложением перепланировать
         waitForPopup("replan-notification", "Необходимо подтверждение", "У вас уже запланирована встреча на другую дату. Перепланировать?");
 
         $$("[data-test-id='replan-notification'] button").find(exactText("Перепланировать")).click();
-
-        waitForPopup("success-notification", "Успешно!", "Встреча успешно запланирована на " + rescheduleDate);
-    }
-
-    private String generateDate(int days) {
-        return LocalDate.now().plusDays(days).format(DateTimeFormatter.ofPattern("dd.MM.yyyy"));
+        //ожидаем подтверждение на перенесенную дату
+        waitForPopup("success-notification", "Успешно!", "Встреча успешно запланирована на " + userData.getRescheduledDate());
     }
 
     private void fillAndSubmitOrderForm(String city, String userName, String phone, String appopintmentDate) {
-        open("http://localhost:9999");
 
+        $("[data-test-id='city'] input").sendKeys(Keys.chord(Keys.SHIFT, Keys.HOME), Keys.BACK_SPACE);
         $("[data-test-id='city'] input").setValue(city);
 
         $("[data-test-id='date'] input").sendKeys(Keys.chord(Keys.SHIFT, Keys.HOME), Keys.BACK_SPACE);
         $("[data-test-id='date'] input").setValue(appopintmentDate);
 
+        $("[data-test-id='name'] input").sendKeys(Keys.chord(Keys.SHIFT, Keys.HOME), Keys.BACK_SPACE);
         $("[data-test-id='name'] input").setValue(userName);
+
+        $("[data-test-id='phone'] input").sendKeys(Keys.chord(Keys.SHIFT, Keys.HOME), Keys.BACK_SPACE);
         $("[data-test-id='phone'] input").setValue(phone);
-        $("[data-test-id='agreement'] [role='presentation']").click();
+
+        WebElement checkBoxElement = $("[data-test-id='agreement'] .checkbox__control").toWebElement();
+        if(!checkBoxElement.isSelected())
+            $("[data-test-id='agreement'] [role='presentation']").click();
 
         $$(".button_theme_alfa-on-white").find(exactText("Запланировать")).click();
     }

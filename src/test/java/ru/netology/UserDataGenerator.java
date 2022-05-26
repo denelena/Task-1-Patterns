@@ -2,7 +2,9 @@ package ru.netology;
 
 import com.github.javafaker.Faker;
 
+import java.time.LocalDate;
 import java.time.LocalTime;
+import java.time.format.DateTimeFormatter;
 import java.util.Locale;
 
 public class UserDataGenerator {
@@ -13,7 +15,7 @@ public class UserDataGenerator {
 
         String fullName = fkr.name().fullName();
         //методом научного тыка было найдено, что авторы app-card-delivery.jar не считают ё русской буквой.
-        // LMAO+ROTFL+STC
+        // Кот Васильевич Ёжкин негодует! LMAO+ROTFL+STC
         fullName = fullName.replace('ё', 'е').replace('Ё', 'Е');
 
         String phone = fkr.phoneNumber().phoneNumber().replace("(","").replace(")","").replace("-","");
@@ -23,6 +25,9 @@ public class UserDataGenerator {
         int nearlyRandomSelector = LocalTime.now().getSecond() % 4;
         String city = availableCities[nearlyRandomSelector];
 
-        return new UserDataEntry(city, fullName, phone);
+        String firstDate = LocalDate.now().plusDays(4).format(DateTimeFormatter.ofPattern("dd.MM.yyyy"));
+        String secondDate = LocalDate.now().plusDays(7).format(DateTimeFormatter.ofPattern("dd.MM.yyyy"));
+
+        return new UserDataEntry(city, fullName, phone, firstDate, secondDate);
     }
 }
